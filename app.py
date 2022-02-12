@@ -121,7 +121,7 @@ def create():
                 ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
                 lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
                 command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = request.json.get('input'),
-                output=request.json.get('output') ) 
+                output=request.json.get('output'), disabled=0 ) 
             db.session.add(test)
             db.session.flush()
             pid = test.pid
