@@ -154,10 +154,19 @@ def tests():
                 return jsonify({"error" : True})
 
     if(request.json.get('type') == "results"):
-        return jsonify([i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
+        quer =  db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
-        ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid')).all()])
+        ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid')).all()
+        ans = []
+        objs = []
+        for i in quer:
+            dicts = {}
+            for j in i:
+                for z in  j.__table__.columns:
+                    dicts.update({z.name : getattr(j, z.name)})
+            ans.append(dicts)
+        return jsonify(ans)
     if(request.json.get('type') == "testcases"):
         return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.project == request.json.get('proj_id')).all()])
     if(request.json.get('type') == "testcase"):
@@ -258,7 +267,7 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        print(con.execute("SELECT * FROM test_runner WHERE pid=2").all())
+        print(con.execute("SELECT * FROM results").all())
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
