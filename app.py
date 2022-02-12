@@ -103,7 +103,7 @@ def create():
         files = request.files.getlist('file')
         resp = {"path" : []}
         for file in files:
-            s3.Bucket('files').upload_fileobj(file.read(),os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
+            s3.Bucket('files').upload_fileobj(file,os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
             resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         return jsonify(resp["path"])
     if(request.json.get('type', None) == "user"):
@@ -197,7 +197,7 @@ def run():
 
 @app.route('/static/<path:path>')
 def serve(path):
-    return send_from_directory('.', path)
+    return s3.Bucket('files').get_object(key=path).read().decode("ascii")
 @app.route('/edit', methods=["POST"])
 def post():
     if(request.json.get("type") == "vote"):
