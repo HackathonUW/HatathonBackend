@@ -215,11 +215,11 @@ def post():
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "disable"):
-        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 1;
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).first().disabled = 1;
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "enable"):
-        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 0;
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).first().disabled = 0;
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "img"):
@@ -251,10 +251,10 @@ def stats():
 
 if(__name__ == "__main__"):
     
-    #with engine.connect() as con:
+    with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        #print(con.execute("UPDATE test_runner SET disabled = 0").all())
+        print(con.execute("SELECT * FROM test_runner WHERE disabled=1").all())
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
