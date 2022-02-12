@@ -83,7 +83,7 @@ class Users(db.Model):
 
 class Results(db.Model):
     pid = db.Column(db.Integer, primary_key=True, nullable=False)
-    uuid = db.Column(db.String(255), db.ForeignKey('running.uuid',, ondelete="CASCADE"), nullable=False)
+    uuid = db.Column(db.String(255), db.ForeignKey('running.uuid', ondelete="CASCADE"), nullable=False)
     status = db.Column(db.Integer, nullable=False)
     tests = db.Column(db.Integer, db.ForeignKey('test_runner.pid'), nullable=False)
     time = db.Column(db.DATETIME, nullable=False)
