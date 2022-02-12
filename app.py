@@ -211,7 +211,7 @@ def serve(path):
 @app.route('/edit', methods=["POST"])
 def post():
     if(request.json.get("type") == "vote"):
-        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).ratings += 1
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).one().ratings += 1
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "disable"):
@@ -223,7 +223,11 @@ def post():
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "img"):
-        Projects.query.filter(Projects.pid == request.json.get("id")).img = request.json.get("b64")
+        Projects.query.filter(Projects.pid == request.json.get("id")).one().img = request.json.get("b64")
+        db.session.commit()
+        return jsonify({"error" : False})
+    if(request.json.get("type") == "res"):
+        Projects.query.filter(Results.uuid == request.json.get("uuid"), Results.tests == request.json.get("testid")).one().status = request.json.get("status")
         db.session.commit()
         return jsonify({"error" : False})
     return jsonify({"error" : True})
