@@ -23,7 +23,8 @@ def currdate():
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
     return dt_string
 app = Flask(__name__, static_url_path='/static')
-connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
+#connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
+connstr = "mysql://bc8019e87e6109:5c918ad9@us-cdbr-east-05.cleardb.net/heroku_9d930a3a6d1940f?reconnect=true"
 app.config['SQLALCHEMY_DATABASE_URI'] = connstr
 db = SQLAlchemy(app)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -237,7 +238,7 @@ def post():
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "res"):
-        Results.query.filter(Results.uuid == request.json.get("uuid"), Results.tests == request.json.get("testid")).one().status = request.json.get("status")
+        Results.query.filter(Results.uuid == request.json.get("uuid"), Results.tests == request.json.get("testid")).first().status = request.json.get("status")
         db.session.commit()
         return jsonify({"error" : False})
     return jsonify({"error" : True})
