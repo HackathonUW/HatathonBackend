@@ -39,7 +39,7 @@ class Running(db.Model):
     uuid = db.Column(db.String(255), primary_key=True, nullable=False)
     email = db.Column(db.String(255), db.ForeignKey('users.email'), nullable=False)
     project = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"), nullable=False)
-    results = db.relationship('Results', backref="running")
+    results = db.relationship('Results',cascade='all,delete', backref="running")
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -191,12 +191,11 @@ def run():
     proj_id = request.json.get("projectid")
     email = request.json.get("email")
     if(Running.query.filter(Running.uuid == uuid).first()):
-        Running.query.filter(Running.uuid == uuid).first().delete()
+        user = Running.query.filter(Running.uuid == uuid).first()
+        db.session.delete(user)
         db.session.commit()
         running = Running(uuid = uuid, project = proj_id, email = email)
         db.session.add(running)
-        db.session.commit()
-        Results.query.filter(Results.uuid == uuid).first().delete()
         db.session.commit()
         for i in TestRunner.query.filter(TestRunner.project == proj_id).all():
             results = Results(uuid = uuid, status = request.json.get("status", 3), tests=i.pid, time = currdate())
