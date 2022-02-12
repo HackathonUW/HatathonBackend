@@ -20,15 +20,23 @@ app.config['UPLOAD_FOLDER'] = '/static'
 meta = MetaData()   
 meta.bind= engine
 
+class Running(db.Model):
+    uuid = db.Column(db.String(255), primary_key=True, nullable=False)
+    email = db.Column(db.String(255), db.ForeignKey('users.email'), nullable=False)
+    project = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    results = db.relationship('Results', backref="running")
+
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Projects(db.Model):
     id= db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(255))
-    tests = db.relationship('TestRunner', backref='Projects', lazy=True)
+    tests = db.relationship("TestRunner", backref="projects")
     course = db.Column(db.String(255))
     section = db.Column(db.String(255))
     lastupdated = db.Column(db.DATETIME)
     prof = db.Column(db.String(255))
-    runs = db.relationship('Running', backref='Projects', lazy=True)
+    runs = db.relationship("Running", backref="projects")
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -42,31 +50,24 @@ class TestRunner(db.Model):
     post = db.Column(db.String(255), nullable = False)
     command = db.Column(db.String(255), nullable = False)
     project = db.Column(db.ForeignKey('projects.id'), nullable = False)
-    runs = db.relationship('Running', backref='Results', lazy=True)
+    runs = db.relationship('Results', backref='test_runner', lazy=True)
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Users(db.Model):
     email = db.Column(db.String(255), nullable = False, primary_key = True)
     name = db.Column(db.Integer, nullable = False)
-    runs = db.relationship('Running', backref='Projects', lazy=True)
+    runs = db.relationship('Running', backref='users', lazy=True)
 
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-class Running(db.Model):
-    uuid = db.Column(db.String(255), primary_key=True, nullable=False)
-    email = db.Column(db.ForeignKey('users.email'), nullable=False)
-    project = db.Column(db.ForeignKey('projects.id'), nullable=False)
-    results = db.relationship('Results', backref='Running', lazy=True)
 
-    def as_dict(self):
-       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class Results(db.Model):
     pid = db.Column(db.Integer, primary_key=True, nullable=False)
-    uuid = db.Column(db.ForeignKey('running.uuid'), nullable=False)
+    uuid = db.Column(db.String(255), db.ForeignKey('running.uuid'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
-    tests = db.Column(db.ForeignKey('test_runner.pid'), nullable=False)
+    tests = db.Column(db.Integer, db.ForeignKey('test_runner.pid'), nullable=False)
     time = db.Column(db.DATETIME, nullable=False)
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
@@ -79,7 +80,7 @@ class Status(db.Model):
 
 @app.route('/create', methods = ['POST'])
 def create():
-    print(request.files)
+    print(request.json)
     if('file' in request.files):
         file = request.files['file']
         file.save(os.path.join(app.config["UPLOAD_FOLDER"]), file.filename)
@@ -120,11 +121,13 @@ def tests():
             return jsonify([i.as_dict() for i in Projects.query.all()])
         else:
             return jsonify(Projects.query.filter(Projects.id == request.json.get('id')).first().as_dict())
-    if(request.json.get('results') == "results"):
+    if(request.json.get('type') == "results"):
         return [i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
         ).join(Status, Results.status == Status.name).filter(Running.uuid == request.json.get('uuid')).all()]
+    if(request.json.get('type') == "testcases"):
+        pass
     return jsonify({"error":False})
 
 
@@ -132,4 +135,13 @@ def tests():
 def new():
     return jsonify({"uuid": uuid.uuid4()})
 if(__name__ == "__main__"):
+    
+    with engine.connect() as con:
+        con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
+        con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;drop table if exists results;SET FOREIGN_KEY_CHECKS = 1;")
+        db.create_all()
+        print(con.execute("SHOW COLUMNS from running").all())
+        print(con.execute("SHOW COLUMNS from test_runner").all())
+
+    
     app.run()
