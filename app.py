@@ -69,7 +69,7 @@ class TestRunner(db.Model):
     input = db.Column(db.String(255), nullable= False)
     output = db.Column(db.String(255), nullable = False)
     runs = db.relationship('Results', backref='test_runner', lazy=True)
-
+    disabled = db.Column(db.Integer, nullable= False)
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Users(db.Model):
