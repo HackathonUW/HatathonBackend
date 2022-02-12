@@ -161,7 +161,7 @@ def tests():
     if(request.json.get('type') == "testcases"):
         return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.project == request.json.get('proj_id')).all()])
     if(request.json.get('type') == "testcase"):
-        return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.pid == request.json.get('pid')).all()])
+        return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.pid == request.json.get('pid')).all()][0])
 
     if(request.json.get('type') == "running"):
         return jsonify([i.as_dict() for i in Running.query.all()])
@@ -254,11 +254,10 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        print(con.execute("SELECT * FROM test_runner WHERE disabled=1").all())
+        print(con.execute("SELECT * FROM test_runner WHERE pid=2").all())
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
         #print(con.execute("SELECT * FROM test_runner").all())
         #db.create_all()
-    
     app.run()
