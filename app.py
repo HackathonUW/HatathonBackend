@@ -21,9 +21,13 @@ meta.bind= engine
 
 class TestRunner(db.Model):
     pid = db.Column(db.Integer,nullable=False, primary_key=True)
-    ratings = db.Column(db.Integer, nullable=False)
+    ratings = db.Column(db.Integer)
     author = db.Column(db.String(255), nullable = False)
-
+    name  = db.Column(db.String(255), nullable=False)
+    lastupdated = db.Column(db.DATETIME)
+    pre = db.Column(db.String(255), nullable = False)
+    post = db.Column(db.String(255), nullable = False)
+    command = db.Column(db.String(255), nullable = False)
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Users(db.Model):
@@ -35,21 +39,34 @@ class Users(db.Model):
 
 @app.route('/create', methods = ['POST'])
 def create():
-    if(request.json.get('type', None) == "user"):
-        db.session.add(Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"), tests= ""))
-        db.session.commit()
-        return jsonify({"error" : False})
+    print(request.files)
     if('file' in request.files):
         file = request.files['file']
         file.save(os.path.join(app.config["UPLOAD_FOLDER"]), file.filename)
         return jsonify({"path" : os.path.join(app.config["UPLOAD_FOLDER"])})
+    if(request.json.get('type', None) == "user"):
+        db.session.add(Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"), tests= ""))
+        db.session.commit()
+        return jsonify({"error" : False})
+    if(request.json.get('type', None) == "testcase"):
+        db.session.add(TestRunner(
+            ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
+            lastupdated = request.json.get('date', None), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
+            command = request.json.get("command", "") ))
+        return jsonify({"error" : False})
+    return jsonify({"error" : True})
+
+
 
 @app.route('/tests', methods=['POST'])
 def tests():
     print(request.json.get('name',None))
     if(request.json.get('name',None) == 'all'):
-        for i in db.session.query(TestRunner).all():
-            print(i)
+        return jsonify([i.as_dict() for i in db.session.query(TestRunner).all()])
+    if(request.json.get('name', None)):
+        return jsonify([i.as_dict() for i in db.session.query(TestRunner).filter(name=request.json.get("name")).first()])
+    if(request.json.get('id', None)):
+        return jsonify([i.as_dict() for i in db.session.query(TestRunner).filter(pid = request.json.get("id").first())])
     return jsonify({"error":False})
 @app.route('/users', methods = ['POST'])
 def users():
@@ -63,5 +80,4 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         print(con.execute("SELECT * FROM information_schema.tables").fetchall())
     '''
-    print(app.url_map)
     app.run()
