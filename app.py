@@ -12,9 +12,8 @@ import sys
 import boto3
 from botocore.client import Config
 s3 = boto3.resource('s3',
-                    endpoint_url='https://' + os.environ.get('tzduk7.stackhero-network.com'),
-                    aws_access_key_id=os.environ.get('K42RaBy0hxCPhckiipNC'),
-                    aws_secret_access_key=os.environ.get('L5IjAK7rt9ETUyl01aGTnzW3jLGpra1Ocwc0qVlp'),
+                    endpoint_url='https://' + 'tzduk7.stackhero-network.com',
+                    aws_access_key_id='K42RaBy0hxCPhckiipNC',
                     config=Config(signature_version='s3v4'),
                     region_name='us-east-1')
 def currdate():
