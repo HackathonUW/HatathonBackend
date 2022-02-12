@@ -176,7 +176,7 @@ def new():
 
 @app.route('/run', methods=["POST"])
 def run():
-    Running.query.filter(Running.time < (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).delete()
+    Results.query.filter(Results.time < (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).delete()
     uuid = request.json.get('uuid') 
     proj_id = request.json.get("projectid")
     email = request.json.get("email")
