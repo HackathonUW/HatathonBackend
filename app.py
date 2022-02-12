@@ -13,7 +13,7 @@ def currdate():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
     return dt_string
-app = Flask(__name__, static_url_path='static')
+app = Flask(__name__, static_url_path='/static')
 connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
 app.config['SQLALCHEMY_DATABASE_URI'] = connstr
 db = SQLAlchemy(app)
