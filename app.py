@@ -1,8 +1,8 @@
-from flask import Flask,request, jsonify, make_response, send_from_directory
+from flask import Flask,request, jsonify, make_response, send_from_directory, session
 import gunicorn
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, MetaData, Table, Enum
-from sqlalchemy.types import TEXT
+from sqlalchemy import create_engine, MetaData, Table, Enum, func
+from sqlalchemy.types import TEXT, BLOB
 import os
 from flask_cors import CORS
 from MySQLdb import _mysql
@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 import sys
 import boto3
 from botocore.client import Config
+
 s3 = boto3.resource('s3',
                     endpoint_url='https://' + 'tzduk7.stackhero-network.com',
                     aws_access_key_id='K42RaBy0hxCPhckiipNC',
@@ -51,6 +52,7 @@ class Projects(db.Model):
     lastupdated = db.Column(db.DATETIME)
     prof = db.Column(db.String(255))
     runs = db.relationship("Running", backref="projects")
+    img = db.Column(db.BLOB)
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
@@ -209,16 +211,43 @@ def post():
         TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 1;
         db.session.commit()
         return jsonify({"error" : False})
+    if(request.json.get("type") == "img"):
+        Projects.query.filter(Projects.pid == request.json.get("id")).img = request.json.get("b64")
+        db.session.commit()
+        return jsonify({"error" : False})
     return jsonify({"error" : True})
+
+@app.route('/stats', methods=["POST"])
+def stats():
+    if(request.json.get("type") == "class"):
+        
+        ans = []
+        for i in db.session.query(Projects.course, func.count(Projects.course)).group_by(Projects.course).all():
+            resp = {"course" : "", "count" : 0}
+            resp["course"] = i[0]
+            resp["count"] = i[1]
+            ans.append(resp)
+        return jsonify(ans)
+    elif(request.json.get("type") == "section"):
+        ans = []
+        for i in db.session.query(Projects.course, Projects.section, func.count(Projects.section)).group_by(Projects.course, Projects.section).all():
+            resp = {"course" : "", "count" : 0}
+            resp["course"] = i[0] + " " + i[1]
+            resp["count"] = i[2]
+            ans.append(resp)
+        return jsonify(ans)
+    return jsonify({"error" : True})
+
 if(__name__ == "__main__"):
     
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
-        #con.execute("UPDATE test_runner SET disabled=0")
-        db.create_all()
+        
+        #con.execute("ALTER TABLE projects ADD COLUMN img BLOB;")
+        #db.create_all()
         print(con.execute("SHOW COLUMNS from running").all())
         print(con.execute("SHOW COLUMNS from test_runner").all())
         print(con.execute("SELECT * FROM test_runner").all())
-        db.create_all()
+        #db.create_all()
     
     app.run()
