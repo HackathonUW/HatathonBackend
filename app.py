@@ -29,6 +29,8 @@ class Projects(db.Model):
     lastupdated = db.Column(db.DATETIME)
     prof = db.Column(db.String(255))
     runs = db.relationship('Running', backref='Projects', lazy=True)
+    def as_dict(self):
+       return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class TestRunner(db.Model):
     pid = db.Column(db.Integer,nullable=False, primary_key=True)
@@ -52,15 +54,17 @@ class Users(db.Model):
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Running(db.Model):
-    pid = db.Column(db.Integer, nullable=False, primary_key=True)
+    uuid = db.Column(db.String(255), primary_key=True, nullable=False)
     email = db.Column(db.ForeignKey('users.email'), nullable=False)
     project = db.Column(db.ForeignKey('projects.id'), nullable=False)
-    
+    results = db.relationship('Results', backref='Running', lazy=True)
+
     def as_dict(self):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 class Results(db.Model):
-    uuid = db.Column(db.String(255), primary_key=True, nullable=False)
+    pid = db.Column(db.Integer, primary_key=True, nullable=False)
+    uuid = db.Column(db.ForeignKey('running.uuid'), nullable=False)
     status = db.Column(db.Integer, nullable=False)
     tests = db.Column(db.ForeignKey('test_runner.pid'), nullable=False)
     time = db.Column(db.DATETIME, nullable=False)
@@ -81,7 +85,7 @@ def create():
         file.save(os.path.join(app.config["UPLOAD_FOLDER"]), file.filename)
         return jsonify({"path" : os.path.join(app.config["UPLOAD_FOLDER"])})
     if(request.json.get('type', None) == "user"):
-        user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"), tests= "")
+        user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"))
         db.session.add(user)
         db.session.commit()
         return jsonify({"user" : False})
@@ -112,7 +116,15 @@ def create():
 @app.route('/get', methods=['POST'])
 def tests():
     if(request.json.get('type') == "project"):
-
+        if(request.json.get('ct') == "ALL"):
+            return jsonify([i.as_dict() for i in Projects.query.all()])
+        else:
+            return jsonify(Projects.query.filter(Projects.id == request.json.get('id')).first().as_dict())
+    if(request.json.get('results') == "results"):
+        return [i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
+        Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
+        ).join(Projects, Running.project == Projects.id, 
+        ).join(Status, Results.status == Status.name).filter(Running.uuid == request.json.get('uuid')).all()]
     return jsonify({"error":False})
 
 
@@ -120,9 +132,4 @@ def tests():
 def new():
     return jsonify({"uuid": uuid.uuid4()})
 if(__name__ == "__main__"):
-    db.create_all()
-    '''
-    with engine.connect() as con:
-        con.execute("INSERT INTO status(id,name) VALUES (0,'pass'), (1, 'fail'), (2,'not started'), (3,'running'),(4,'inconclusive') ")
-    '''
     app.run()
