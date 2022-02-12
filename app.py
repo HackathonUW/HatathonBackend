@@ -1,4 +1,4 @@
-from flask import Flask,request, jsonify, make_response
+from flask import Flask,request, jsonify, make_response, send_from_directory
 import gunicorn
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, MetaData, Table, Enum
@@ -13,7 +13,7 @@ def currdate():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
     return dt_string
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='static')
 connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
 app.config['SQLALCHEMY_DATABASE_URI'] = connstr
 db = SQLAlchemy(app)
@@ -56,6 +56,8 @@ class TestRunner(db.Model):
     post = db.Column(db.String(255), nullable = False)
     command = db.Column(db.String(255), nullable = False)
     project = db.Column(db.ForeignKey('projects.id'), nullable = False)
+    input = db.Column(db.String(255), nullable= False)
+    output = db.Column(db.String(255), nullable = False)
     runs = db.relationship('Results', backref='test_runner', lazy=True)
 
     def as_dict(self):
@@ -87,10 +89,13 @@ class Status(db.Model):
 @app.route('/create', methods = ['POST'])
 def create():
     print(request.json)
-    if('file' in request.files):
-        file = request.files['file']
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"]), file.filename)
-        return jsonify({"path" : os.path.join(app.config["UPLOAD_FOLDER"])})
+    if(request.files.get('file', None)):
+        files = request.files.getlist('file')
+        resp = {"path" : []}
+        for file in files:
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+            resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+        return jsonify(resp["path"])
     if(request.json.get('type', None) == "user"):
         user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"))
         db.session.add(user)
@@ -99,10 +104,14 @@ def create():
     if(request.json.get('type', None) == "testcase"):
         if(not request.json.get("projectid")):
             return jsonify({"error":True})
+        inputs,outputs = request.files.getlist("file")
+        file.save(os.path.join(app.config["UPLOAD_FOLDER"], inputs.filename))
+        file.save(os.path.join(app.config["UPLOAD_FOLDER"], outputs.filename))
         test = TestRunner(
             ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
             lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
-            command = request.json.get("command", ""), project = request.json.get("projectid", 1)) 
+            command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = os.path.join(app.config["UPLOAD_FOLDER"], inputs.filename),
+            output=os.path.join(app.config["UPLOAD_FOLDER"], outputs.filename) ) 
         db.session.add(test)
         db.session.flush()
         pid = test.pid
@@ -179,6 +188,9 @@ def run():
             db.session.commit()
         return jsonify({"error" : False})
 
+@app.route('/static/<path:path>')
+def serve(path):
+    return send_from_directory('.', path)
 @app.route('/edit', methods=["POST"])
 def post():
     if(request.json.get("type") == "vote"):
@@ -188,8 +200,8 @@ if(__name__ == "__main__"):
     
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
-        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;SET FOREIGN_KEY_CHECKS = 1;")
-        #db.create_all()
+        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists test_runner ;SET FOREIGN_KEY_CHECKS = 1;")
+        db.create_all()
         print(con.execute("SHOW COLUMNS from running").all())
         print(con.execute("SHOW COLUMNS from test_runner").all())
         print(con.execute("SELECT * FROM test_runner").all())
