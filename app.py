@@ -98,43 +98,47 @@ class Status(db.Model):
 
 @app.route('/create', methods = ['POST'])
 def create():
-    print(request.files)
-    sys.stdout.flush()
+    try:
+        print(request.files)
+        sys.stdout.flush()
 
-    if(request.files.get('file', None)):
-        files = request.files.getlist('file')
-        resp = {"path" : []}
-        for file in files:
-            s3.Bucket('files').upload_fileobj(file,os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
-            resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
-        return jsonify(resp)
-    if(request.json.get('type', None) == "user"):
-        user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"))
-        db.session.add(user)
-        db.session.commit()
-        return jsonify({"user" : False})
-    if(request.json.get('type', None) == "testcase"):
-        if(not request.json.get("projectid")):
-            return jsonify({"error":True})
-        test = TestRunner(
-            ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
-            lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
-            command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = request.json.get('input'),
-            output=request.json.get('output') ) 
-        db.session.add(test)
-        db.session.flush()
-        pid = test.pid
-        db.session.commit()
-        return jsonify({"test_id" : pid})
-    if(request.json.get('type', None) == "project"):
-        project = Projects(name=request.json.get("name"),course=request.json.get("course"),section=request.json.get("section", "")
-        ,lastupdated=currdate(), prof = request.json.get("prof",""))
-        db.session.add(project)
-        db.session.flush()
-        pid = project.id
-        db.session.commit()
-        return jsonify({"proj_id":pid})
-    return jsonify({"error" : True})
+        if(request.files.get('file', None)):
+            files = request.files.getlist('file')
+            resp = {"path" : []}
+            for file in files:
+                s3.Bucket('files').upload_fileobj(file,os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
+                resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+            return jsonify(resp)
+        if(request.json.get('type', None) == "user"):
+            user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"))
+            db.session.add(user)
+            db.session.commit()
+            return jsonify({"user" : False})
+        if(request.json.get('type', None) == "testcase"):
+            if(not request.json.get("projectid")):
+                return jsonify({"error":True})
+            test = TestRunner(
+                ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
+                lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
+                command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = request.json.get('input'),
+                output=request.json.get('output') ) 
+            db.session.add(test)
+            db.session.flush()
+            pid = test.pid
+            db.session.commit()
+            return jsonify({"test_id" : pid})
+        if(request.json.get('type', None) == "project"):
+            project = Projects(name=request.json.get("name"),course=request.json.get("course"),section=request.json.get("section", "")
+            ,lastupdated=currdate(), prof = request.json.get("prof",""))
+            db.session.add(project)
+            db.session.flush()
+            pid = project.id
+            db.session.commit()
+            return jsonify({"proj_id":pid})
+        return jsonify({"error" : True})
+    except:
+        return jsonify({"error" : True})
+    
 
 
 
@@ -210,6 +214,7 @@ def post():
     if(request.json.get("type") == "disable"):
         TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 1;
         db.session.commit()
+        return jsonify({"error" : False})
     if(request.json.get("type") == "enable"):
         TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 0;
         db.session.commit()
