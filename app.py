@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, MetaData, Table, Enum
 from sqlalchemy.types import TEXT
 import os
 from flask_cors import CORS
+from MySQLdb import _mysql
 
 app = Flask(__name__)
 connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
