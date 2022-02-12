@@ -122,12 +122,12 @@ def tests():
         else:
             return jsonify(Projects.query.filter(Projects.id == request.json.get('id')).first().as_dict())
     if(request.json.get('type') == "results"):
-        return [i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
+        return jsonify([i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
-        ).join(Status, Results.status == Status.name).filter(Running.uuid == request.json.get('uuid')).all()]
+        ).join(Status, Results.status == Status.name).filter(Running.uuid == request.json.get('uuid')).all()])
     if(request.json.get('type') == "testcases"):
-        pass
+        return jsonify([i.as_dict() for i in TestRunner.query().filter(TestRunner.project == request.json.get('proj_id'))])
     return jsonify({"error":False})
 
 
