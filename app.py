@@ -236,7 +236,7 @@ def post():
         db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "res"):
-        Projects.query.filter(Results.uuid == request.json.get("uuid"), Results.tests == request.json.get("testid")).one().status = request.json.get("status")
+        Results.query.filter(Results.uuid == request.json.get("uuid"), Results.tests == request.json.get("testid")).one().status = request.json.get("status")
         db.session.commit()
         return jsonify({"error" : False})
     return jsonify({"error" : True})
@@ -267,7 +267,7 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        print(con.execute("SELECT * FROM results").all())
+        print(con.execute("SELECT * FROM results where uuid LIKE 'a'").all())
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
