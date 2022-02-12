@@ -158,6 +158,7 @@ def tests():
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
         ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid'), TestRunner.disabled == 0).all()
+        
         ans = []
         objs = []
         for i in quer:
@@ -191,9 +192,10 @@ def run():
     proj_id = request.json.get("projectid")
     email = request.json.get("email")
     if(Running.query.filter(Running.uuid == uuid).first()):
-        user = Running.query.filter(Running.uuid == uuid).first()
-        db.session.delete(user)
-        db.session.commit()
+        user = Running.query.filter(Running.uuid == uuid).all()
+        for i in user:
+            db.session.delete(i)
+            db.session.commit()
         running = Running(uuid = uuid, project = proj_id, email = email)
         db.session.add(running)
         db.session.commit()
@@ -267,7 +269,7 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        print(con.execute("SELECT * FROM test_runner").all())
+        #print(con.execute("INSERT INTO  status(id, name) VALUES (3,'Success')").all())
         print(con.execute("SELECT * FROM running").all())
 
         #db.create_all()
