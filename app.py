@@ -38,7 +38,7 @@ meta.bind= engine
 class Running(db.Model):
     uuid = db.Column(db.String(255), primary_key=True, nullable=False)
     email = db.Column(db.String(255), db.ForeignKey('users.email'), nullable=False)
-    project = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    project = db.Column(db.Integer, db.ForeignKey('projects.id', ondelete="CASCADE"), nullable=False)
     results = db.relationship('Results', backref="running")
 
     def as_dict(self):
@@ -268,7 +268,7 @@ if(__name__ == "__main__"):
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        print(con.execute("SELECT * FROM results where uuid LIKE 'a'").all())
+        print(con.execute("SELECT * FROM test_runner").all())
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
