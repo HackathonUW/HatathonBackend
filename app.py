@@ -24,7 +24,7 @@ def currdate():
     return dt_string
 app = Flask(__name__, static_url_path='/static')
 #connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
-connstr = "mysql://bc8019e87e6109:5c918ad9@us-cdbr-east-05.cleardb.net/heroku_9d930a3a6d1940f?reconnect=true"
+connstr = "mysql://bc8019e87e6109:5c918ad9@us-cdbr-east-05.cleardb.net/heroku_9d930a3a6d1940f"
 app.config['SQLALCHEMY_DATABASE_URI'] = connstr
 db = SQLAlchemy(app)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -35,7 +35,6 @@ app.config['UPLOAD_FOLDER'] = '/static'
 
 meta = MetaData()   
 meta.bind= engine
-
 class Running(db.Model):
     uuid = db.Column(db.String(255), primary_key=True, nullable=False)
     email = db.Column(db.String(255), db.ForeignKey('users.email'), nullable=False)
