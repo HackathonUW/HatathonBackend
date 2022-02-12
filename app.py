@@ -161,8 +161,7 @@ def tests():
     if(request.json.get('type') == "testcases"):
         return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.project == request.json.get('proj_id')).all()])
     if(request.json.get('type') == "testcase"):
-        return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.project == request.json.get('proj_id'), 
-        TestRunner.pid == request.json.get('pid')).all()])
+        return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.pid == request.json.get('pid')).all()])
 
     if(request.json.get('type') == "running"):
         return jsonify([i.as_dict() for i in Running.query.all()])
