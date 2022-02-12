@@ -251,14 +251,14 @@ def stats():
 
 if(__name__ == "__main__"):
     
-    with engine.connect() as con:
+    #with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
-        #con.execute("ALTER TABLE projects ADD COLUMN img BLOB;")
+        #print(con.execute("UPDATE test_runner SET disabled = 0").all())
         #db.create_all()
-        print(con.execute("SHOW COLUMNS from running").all())
-        print(con.execute("SHOW COLUMNS from test_runner").all())
-        print(con.execute("SELECT * FROM test_runner").all())
+        #print(con.execute("SHOW COLUMNS from running").all())
+        #print(con.execute("SHOW COLUMNS from test_runner").all())
+        #print(con.execute("SELECT * FROM test_runner").all())
         #db.create_all()
     
     app.run()
