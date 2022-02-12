@@ -195,9 +195,10 @@ def run():
             db.session.commit()
         return jsonify({"error" : False})
 
-@app.route('/static/<path:path>')
+@app.route('/static/<path>')
 def serve(path):
-    return s3.Bucket('files').get_object(key=path).read().decode("ascii")
+    print(path)
+    return s3.Object('files','/static/'+path).get()['Body'].read().decode("ascii")
 @app.route('/edit', methods=["POST"])
 def post():
     if(request.json.get("type") == "vote"):
