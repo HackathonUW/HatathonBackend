@@ -105,7 +105,7 @@ def create():
         for file in files:
             s3.Bucket('files').upload_fileobj(file,os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
             resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
-        return jsonify(resp["path"])
+        return jsonify(resp)
     if(request.json.get('type', None) == "user"):
         user = Users(email = request.json.get('email', "N/A"), name = request.json.get('name', "N/A"))
         db.session.add(user)
