@@ -7,6 +7,12 @@ import os
 from flask_cors import CORS
 from MySQLdb import _mysql
 import uuid
+from datetime import datetime
+
+def currdate():
+    now = datetime.now()
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    return dt_string
 app = Flask(__name__)
 connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
 app.config['SQLALCHEMY_DATABASE_URI'] = connstr
@@ -95,7 +101,7 @@ def create():
             return jsonify({"error":True})
         test = TestRunner(
             ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
-            lastupdated = request.json.get('date', None), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
+            lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
             command = request.json.get("command", ""), project = request.json.get("projectid", 1)) 
         db.session.add(test)
         db.session.flush()
@@ -104,7 +110,7 @@ def create():
         return jsonify({"test_id" : pid})
     if(request.json.get('type', None) == "project"):
         project = Projects(name=request.json.get("name"),course=request.json.get("course"),section=request.json.get("section", "")
-        ,lastupdated=request.json.get("lastupdated"), prof = request.json.get("prof",""))
+        ,lastupdated=currdate(), prof = request.json.get("prof",""))
         db.session.add(project)
         db.session.flush()
         pid = project.id
@@ -125,7 +131,7 @@ def tests():
         return jsonify([i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
-        ).join(Status, Results.status == Status.name).filter(Running.uuid == request.json.get('uuid')).all()])
+        ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid')).all()])
     if(request.json.get('type') == "testcases"):
         return jsonify([i.as_dict() for i in TestRunner.query().filter(TestRunner.project == request.json.get('proj_id'))])
     return jsonify({"error":False})
@@ -134,14 +140,49 @@ def tests():
 @app.route('/new', methods = ['POST'])
 def new():
     return jsonify({"uuid": uuid.uuid4()})
+
+@app.route('/run', methods=["POST"])
+def run():
+    uuid = request.json.get('uuid') 
+    proj_id = request.json.get("projectid")
+    email = request.json.get("email")
+    if(Running.query.filter(Running.uuid == uuid).first()):
+        Running.query.filter(Running.uuid == uuid).delete()
+        db.session.commit()
+        running = Running(uuid = uuid, project = proj_id, email = email)
+        db.session.add(running)
+        db.session.commit()
+        Results.query.filter(Results.uuid == uuid).delete()
+        db.session.commit()
+        for i in TestRunner.query.filter(TestRunner.project == proj_id).all():
+            results = Results(uuid = uuid, status = request.json.get("status", 3), tests=i.pid, time = currdate())
+            db.session.add(results)
+            db.session.commit()
+        return jsonify({"error" : False})
+
+    else:
+        running = Running(uuid = uuid, project = proj_id, email = email)
+        db.session.add(running)
+        db.session.commit()
+        for i in TestRunner.query.filter(TestRunner.project == proj_id).all():
+            results = Results(uuid = uuid, status = request.json.get("status", 3), tests=i.pid, time = currdate())
+            db.session.add(results)
+            db.session.commit()
+        return jsonify({"error" : False})
+
+@app.route('/edit', methods=["POST"])
+def post():
+    if(request.json.get("type") == "vote"):
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).ratings += 1
+    return jsonify({"error" : False})
 if(__name__ == "__main__"):
     
     with engine.connect() as con:
-        con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
-        con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;drop table if exists results;SET FOREIGN_KEY_CHECKS = 1;")
-        db.create_all()
+        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
+        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;drop table if exists results;SET FOREIGN_KEY_CHECKS = 1;")
+        #db.create_all()
         print(con.execute("SHOW COLUMNS from running").all())
         print(con.execute("SHOW COLUMNS from test_runner").all())
-
+        print(con.execute("SELECT * FROM test_runner").all())
     
     app.run()
