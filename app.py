@@ -157,7 +157,7 @@ def tests():
         quer =  db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
-        ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid')).all()
+        ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid'), TestRunner.disabled == 0).all()
         ans = []
         objs = []
         for i in quer:
