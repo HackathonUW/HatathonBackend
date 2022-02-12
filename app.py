@@ -191,12 +191,12 @@ def run():
     proj_id = request.json.get("projectid")
     email = request.json.get("email")
     if(Running.query.filter(Running.uuid == uuid).first()):
-        Running.query.filter(Running.uuid == uuid).delete()
+        Running.query.filter(Running.uuid == uuid).first().delete()
         db.session.commit()
         running = Running(uuid = uuid, project = proj_id, email = email)
         db.session.add(running)
         db.session.commit()
-        Results.query.filter(Results.uuid == uuid).delete()
+        Results.query.filter(Results.uuid == uuid).first().delete()
         db.session.commit()
         for i in TestRunner.query.filter(TestRunner.project == proj_id).all():
             results = Results(uuid = uuid, status = request.json.get("status", 3), tests=i.pid, time = currdate())
