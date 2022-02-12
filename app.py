@@ -210,6 +210,9 @@ def post():
     if(request.json.get("type") == "disable"):
         TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 1;
         db.session.commit()
+    if(request.json.get("type") == "enable"):
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 0;
+        db.session.commit()
         return jsonify({"error" : False})
     if(request.json.get("type") == "img"):
         Projects.query.filter(Projects.pid == request.json.get("id")).img = request.json.get("b64")
