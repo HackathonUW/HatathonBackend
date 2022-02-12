@@ -9,6 +9,14 @@ from MySQLdb import _mysql
 import uuid
 from datetime import datetime, timedelta
 import sys
+import boto3
+from botocore.client import Config
+s3 = boto3.resource('s3',
+                    endpoint_url='https://' + os.environ.get('tzduk7.stackhero-network.com'),
+                    aws_access_key_id=os.environ.get('K42RaBy0hxCPhckiipNC'),
+                    aws_secret_access_key=os.environ.get('L5IjAK7rt9ETUyl01aGTnzW3jLGpra1Ocwc0qVlp'),
+                    config=Config(signature_version='s3v4'),
+                    region_name='us-east-1')
 def currdate():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -95,7 +103,7 @@ def create():
         files = request.files.getlist('file')
         resp = {"path" : []}
         for file in files:
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"]),  file.filename)
+            s3.Bucket('files').upload_fileobj(file.read(),os.path.join(app.config["UPLOAD_FOLDER"],file.filename))
             resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         return jsonify(resp["path"])
     if(request.json.get('type', None) == "user"):
