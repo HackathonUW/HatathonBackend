@@ -95,7 +95,7 @@ def create():
         files = request.files.getlist('file')
         resp = {"path" : []}
         for file in files:
-            file.save(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"]),  file.filename)
             resp["path"].append(os.path.join(app.config["UPLOAD_FOLDER"], file.filename))
         return jsonify(resp["path"])
     if(request.json.get('type', None) == "user"):
@@ -106,14 +106,11 @@ def create():
     if(request.json.get('type', None) == "testcase"):
         if(not request.json.get("projectid")):
             return jsonify({"error":True})
-        inputs,outputs = request.files.getlist("file")
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], inputs.filename))
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], outputs.filename))
         test = TestRunner(
             ratings = request.json.get('rating', None), author = request.json.get('author', 'John Doe'), name = request.json.get('name', 'N/A'),
             lastupdated = currdate(), pre = request.json.get('pre', ""), post = request.json.get('post', ""), 
-            command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = os.path.join(app.config["UPLOAD_FOLDER"], inputs.filename),
-            output=os.path.join(app.config["UPLOAD_FOLDER"], outputs.filename) ) 
+            command = request.json.get("command", ""), project = request.json.get("projectid", 1),input = request.json.get('input'),
+            output=request.json.get('output') ) 
         db.session.add(test)
         db.session.flush()
         pid = test.pid
