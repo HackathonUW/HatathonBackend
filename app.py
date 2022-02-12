@@ -83,7 +83,7 @@ class Users(db.Model):
 
 class Results(db.Model):
     pid = db.Column(db.Integer, primary_key=True, nullable=False)
-    uuid = db.Column(db.String(255), db.ForeignKey('running.uuid'), nullable=False)
+    uuid = db.Column(db.String(255), db.ForeignKey('running.uuid',, ondelete="CASCADE"), nullable=False)
     status = db.Column(db.Integer, nullable=False)
     tests = db.Column(db.Integer, db.ForeignKey('test_runner.pid'), nullable=False)
     time = db.Column(db.DATETIME, nullable=False)
@@ -269,6 +269,8 @@ if(__name__ == "__main__"):
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
         
         print(con.execute("SELECT * FROM test_runner").all())
+        print(con.execute("SELECT * FROM running").all())
+
         #db.create_all()
         #print(con.execute("SHOW COLUMNS from running").all())
         #print(con.execute("SHOW COLUMNS from test_runner").all())
