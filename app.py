@@ -7,11 +7,11 @@ import os
 from flask_cors import CORS
 from MySQLdb import _mysql
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def currdate():
     now = datetime.now()
-    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+    dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
     return dt_string
 app = Flask(__name__)
 connstr =  "mysql://etlfzuiqep3x9epw:rm0aadwhwg8876si@z3iruaadbwo0iyfp.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/bvfo3h955t68zhoz"
@@ -62,7 +62,7 @@ class TestRunner(db.Model):
        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class Users(db.Model):
     email = db.Column(db.String(255), nullable = False, primary_key = True)
-    name = db.Column(db.Integer, nullable = False)
+    name = db.Column(db.String(255), nullable = False)
     runs = db.relationship('Running', backref='users', lazy=True)
 
     def as_dict(self):
@@ -126,14 +126,22 @@ def tests():
         if(request.json.get('ct') == "ALL"):
             return jsonify([i.as_dict() for i in Projects.query.all()])
         else:
-            return jsonify(Projects.query.filter(Projects.id == request.json.get('id')).first().as_dict())
+            if(Projects.query.filter(Projects.id == request.json.get('id')).first()):
+                return jsonify(Projects.query.filter(Projects.id == request.json.get('id')).first().as_dict())
+            else:
+                return jsonify({"error" : True})
+
     if(request.json.get('type') == "results"):
         return jsonify([i.as_dict() for i in db.session.query(Running, Results, TestRunner, Projects,Status).join(Results, 
         Results.uuid == Running.uuid).join(TestRunner, Results.tests == TestRunner.pid
         ).join(Projects, Running.project == Projects.id, 
         ).join(Status, Results.status == Status.id).filter(Running.uuid == request.json.get('uuid')).all()])
     if(request.json.get('type') == "testcases"):
-        return jsonify([i.as_dict() for i in TestRunner.query().filter(TestRunner.project == request.json.get('proj_id'))])
+        return jsonify([i.as_dict() for i in TestRunner.query.filter(TestRunner.project == request.json.get('proj_id'))])
+    if(request.json.get('type') == "running"):
+        return jsonify([i.as_dict() for i in Running.query.all()])
+    if(request.json.get("type") == "users"):
+        return jsonify([i.as_dict() for i in Users.query.all()])
     return jsonify({"error":False})
 
 
@@ -143,6 +151,7 @@ def new():
 
 @app.route('/run', methods=["POST"])
 def run():
+    Running.query.filter(Running.time < (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")).delete()
     uuid = request.json.get('uuid') 
     proj_id = request.json.get("projectid")
     email = request.json.get("email")
@@ -179,10 +188,11 @@ if(__name__ == "__main__"):
     
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
-        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;drop table if exists results;SET FOREIGN_KEY_CHECKS = 1;")
+        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists users;SET FOREIGN_KEY_CHECKS = 1;")
         #db.create_all()
         print(con.execute("SHOW COLUMNS from running").all())
         print(con.execute("SHOW COLUMNS from test_runner").all())
         print(con.execute("SELECT * FROM test_runner").all())
+        db.create_all()
     
     app.run()
