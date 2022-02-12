@@ -8,7 +8,7 @@ from flask_cors import CORS
 from MySQLdb import _mysql
 import uuid
 from datetime import datetime, timedelta
-
+import sys
 def currdate():
     now = datetime.now()
     dt_string = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -88,7 +88,9 @@ class Status(db.Model):
 
 @app.route('/create', methods = ['POST'])
 def create():
-    print(request.json)
+    print(request.files)
+    sys.stdout.flush()
+
     if(request.files.get('file', None)):
         files = request.files.getlist('file')
         resp = {"path" : []}
