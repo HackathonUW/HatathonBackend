@@ -203,12 +203,18 @@ def serve(path):
 def post():
     if(request.json.get("type") == "vote"):
         TestRunner.query.filter(TestRunner.pid == request.json.get("id")).ratings += 1
-    return jsonify({"error" : False})
+        db.session.commit()
+        return jsonify({"error" : False})
+    if(request.json.get("type") == "disable"):
+        TestRunner.query.filter(TestRunner.pid == request.json.get("id")).disabled = 1;
+        db.session.commit()
+        return jsonify({"error" : False})
+    return jsonify({"error" : True})
 if(__name__ == "__main__"):
     
     with engine.connect() as con:
         #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists running;drop table if exists projects;drop table if exists test_runner;SET FOREIGN_KEY_CHECKS = 1;")
-        #con.execute("SET FOREIGN_KEY_CHECKS = 0;drop table if exists test_runner ;SET FOREIGN_KEY_CHECKS = 1;")
+        #con.execute("UPDATE test_runner SET disabled=0")
         db.create_all()
         print(con.execute("SHOW COLUMNS from running").all())
         print(con.execute("SHOW COLUMNS from test_runner").all())
